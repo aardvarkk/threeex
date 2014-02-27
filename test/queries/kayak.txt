@@ -1,3 +1,0 @@
-http://www.ca.kayak.com/flights/YYZ-ARN/2014-08-04/ARN-YYZ/2014-08-18/KIR-DUB/2014-08-25
-http://www.ca.kayak.com/flights?fid=&adults=1&cabin=e&oneway=m&mc=y&origin0=Toronto%2C+ON%2C+Canada&origincode0=YYZ%2F11592&destination0=Stockholm%2C+Sweden&destcode0=ARN%2F9880&depart_date0=4%2F08%2F2014&depart_time0=a&origin1=Stockholm%2C+Sweden&origincode1=ARN%2F9880&destination1=Toronto%2C+ON%2C+Canada&destcode1=YYZ%2F11592&depart_date1=18%2F08%2F2014&depart_time1=a&origin2=Kerry+County%2C+Ireland&origincode2=KIR%2F53064&destination2=Dublin%2C+Ireland&destcode2=DUB%2F7362&depart_date2=25%2F08%2F2014&depart_time2=a
-http://www.kayak.com/labs/rss/
