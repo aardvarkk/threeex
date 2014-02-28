@@ -7,6 +7,8 @@ GEM
       rack (>= 1.0.0)
       rack-test (>= 0.5.4)
       xpath (~> 2.0)
+    capybara-user_agent (0.0.2)
+      capybara (~> 2.0, >= 2.0.2)
     capybara-webkit (1.1.0)
       capybara (~> 2.0, >= 2.0.2)
       json
@@ -26,4 +28,5 @@ PLATFORMS
 
 DEPENDENCIES
   capybara
+  capybara-user_agent
   capybara-webkit
