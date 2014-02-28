@@ -16,6 +16,13 @@ module Kayak
     include Capybara::DSL
     include Capybara::UserAgent::DSL
     
+    @airports = {
+      :YYZ => 11592,
+      :ARN => 9880,
+      :YVR => 6668,
+      :SFO => 13852
+    }
+
     def run_query
 
       # set_user_agent :googlebot
