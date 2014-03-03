@@ -7,21 +7,67 @@ Capybara.current_driver = :selenium
 # Capybara.current_driver = :webkit
 # Capybara.javascript_driver = :webkit
 Capybara.default_wait_time = 5
+
+# Need to interact with hidden form field for Kayak ID
 Capybara.ignore_hidden_elements = false
+
+# When searching for an airport showing up on the page, we don't care if it's ambiguous
+Capybara.match = :first
 
 # Capybara::UserAgent.add_user_agents googlebot: 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
 
 module Kayak
+
+  def self.load_strikes(filename)
+    strikes = []
+    File.open(filename, 'rb').read.lines.each do |l|
+      src,dst = l.strip.split(',')
+      strikes << { src: src, dst: dst }
+    end
+    puts "Loaded #{strikes.length} strikes"
+    return strikes
+  end
+
+  def self.load_kayak_codes(filename)
+    codes = {}
+    File.open(filename, 'rb').read.lines.each do |l|
+      iata,code = l.strip.split(',')
+      codes[iata.to_sym] = code
+    end
+    puts "Loaded #{codes.length} Kayak codes"
+    return codes
+  end
+
   class Query
     include Capybara::DSL
     include Capybara::UserAgent::DSL
-    
-    @airports = {
-      :YYZ => 11592,
-      :ARN => 9880,
-      :YVR => 6668,
-      :SFO => 13852
-    }
+
+    def initialize
+      @codes = Kayak.load_kayak_codes 'kayak_codes.dat'
+      @strikes = Kayak.load_strikes 'strikes.dat'
+    end
+
+    def get_code(iata)
+      code = @codes[iata.to_sym]
+      return if code
+
+      visit 'http://www.kayak.com/flights'
+      fill_in 'origin', with: iata
+      find('li.ap')
+      find('#origin').native.send_keys :tab
+      code = find(:xpath, "//input[@id='origincode']").value.strip
+
+      puts "Found Kayak code #{code} for #{iata}"
+      return code
+    end
+
+    def run_search
+      # Check that we have codes for all strikes
+      @strikes.each do |s|
+        get_code s[:src]
+        get_code s[:dst]
+      end
+    end
 
     def run_query
 
@@ -107,5 +153,6 @@ module Kayak
 end
 
 t = Kayak::Query.new
-t.run_query
+t.run_search
+#t.run_query
 
