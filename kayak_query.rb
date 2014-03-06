@@ -1,13 +1,17 @@
 require 'capybara'
 require 'capybara-webkit'
 require 'capybara-user_agent'
+require 'net/http' 
 require 'open-uri'
 require 'trollop'
+
+LONG_WAIT = 60
+SHORT_WAIT = 5
 
 Capybara.current_driver = :selenium
 # Capybara.current_driver = :webkit
 # Capybara.javascript_driver = :webkit
-Capybara.default_wait_time = 60
+Capybara.default_wait_time = LONG_WAIT
 
 # Need to interact with hidden form field for Kayak ID
 Capybara.ignore_hidden_elements = false
@@ -52,6 +56,10 @@ module Kayak
     include Capybara::DSL
     include Capybara::UserAgent::DSL
 
+    def prices
+      @prices ||= []
+    end
+
     def codes
       @codes ||= Kayak.codes
     end
@@ -92,7 +100,7 @@ module Kayak
       end
     end
 
-    def test_strike(oa, od, da, dd, sd, ssrc, sdst)
+    def test_strike(itin)
 
       Capybara.current_session.reset!
 
@@ -103,67 +111,59 @@ module Kayak
       # Fill with blanks first to stop auto-filling when moving through the form
 
       fill_in 'origin0', with: ''
-      fill_in 'origin0', with: oa
-      Capybara.current_session.driver.execute_script("return document.getElementById('origincode0').value = '#{get_code oa}';")
+      fill_in 'origin0', with: itin[:oa]
+      Capybara.current_session.driver.execute_script("return document.getElementById('origincode0').value = '#{get_code itin[:oa]}';")
 
       fill_in 'destination0', with: ''
-      fill_in 'destination0', with: da
-      Capybara.current_session.driver.execute_script("return document.getElementById('destcode0').value = '#{get_code da}';")
+      fill_in 'destination0', with: itin[:da]
+      Capybara.current_session.driver.execute_script("return document.getElementById('destcode0').value = '#{get_code itin[:da]}';")
       
-      fill_in 'depart_date0', with: od.strftime('%d/%m/%Y')
+      fill_in 'depart_date0', with: itin[:od].strftime('%d/%m/%Y')
 
       fill_in 'origin1', with: ''
-      fill_in 'origin1', with: da
-      Capybara.current_session.driver.execute_script("return document.getElementById('origincode1').value = '#{get_code da}';")
+      fill_in 'origin1', with: itin[:da]
+      Capybara.current_session.driver.execute_script("return document.getElementById('origincode1').value = '#{get_code itin[:da]}';")
 
       fill_in 'destination1', with: ''
-      fill_in 'destination1', with: oa
-      Capybara.current_session.driver.execute_script("return document.getElementById('destcode1').value = '#{get_code oa}';")
+      fill_in 'destination1', with: itin[:oa]
+      Capybara.current_session.driver.execute_script("return document.getElementById('destcode1').value = '#{get_code itin[:oa]}';")
 
-      fill_in 'depart_date1', with: dd.strftime('%d/%m/%Y')
+      fill_in 'depart_date1', with: itin[:dd].strftime('%d/%m/%Y')
 
-      fill_in 'origin2', with: ''
-      fill_in 'origin2', with: ssrc
-      Capybara.current_session.driver.execute_script("return document.getElementById('origincode2').value = '#{get_code ssrc}';")
-      
-      fill_in 'destination2', with: ''
-      fill_in 'destination2', with: sdst
-      Capybara.current_session.driver.execute_script("return document.getElementById('destcode2').value = '#{get_code sdst}';")
+      # Don't necessarily need strike info
+      if itin[:ssrc] && itin[:sdst] && itin[:sd]
+        fill_in 'origin2', with: ''
+        fill_in 'origin2', with: itin[:ssrc]
+        Capybara.current_session.driver.execute_script("return document.getElementById('origincode2').value = '#{get_code itin[:ssrc]}';")
+        
+        fill_in 'destination2', with: ''
+        fill_in 'destination2', with: itin[:sdst]
+        Capybara.current_session.driver.execute_script("return document.getElementById('destcode2').value = '#{get_code itin[:sdst]}';")
 
-      fill_in 'depart_date2', with: sd.strftime('%d/%m/%Y')
+        fill_in 'depart_date2', with: itin[:sd].strftime('%d/%m/%Y')
+      end
 
       click_on 'fdimgbutton'
 
-      # Don't want a CAPTCHA...
-      if has_no_selector? '#recaptcha_challenge_image'
+      # Empty result...
+      Capybara.default_wait_time = SHORT_WAIT
+      return if has_selector? '.noresults'
+      Capybara.default_wait_time = LONG_WAIT
 
-        # Don't want an empty result...
-        if has_no_selector? '.noresults'
+      # Wait for progress bar...
+      if has_selector? '#progressDiv'
 
-          # Don't want a progress bar...
-          if has_no_selector? '#progressDiv'
-            all('.bookitprice').each do |p|
-              puts p.text
-            end
-          else
-            throw "Still searching?!"
-          end
+        # Now wait for it to disappear...
+        if has_no_selector? '#progressDiv'
 
-        else
+          prices << { itin: itin, price: find('.bookitprice').text.gsub(/\D/,'').to_i }
+          prices.sort_by! { |p| p[:price] }
+          save_screenshot "#{itin.values.join('_')}.png"
+          puts prices.first
           return
         end
 
-      else
-        reCAPTCHA = find '#recaptcha_challenge_image'
-
-        open('reCAPTCHA.jpg', 'wb') do |file|
-          file << open(reCAPTCHA['src']).read
-        end
-
-        throw 'reCAPTCHA'
       end
-
-      save_screenshot "#{Time.now.to_s}_#{oa}_#{od}_#{da}_#{dd}_#{ssrc}_#{sdst}_#{sd}.png"
 
     end
 
@@ -177,13 +177,17 @@ module Kayak
       # for all origin airports on all origin dates
       # and all destination airports on all destination dates
       # check all strikes on all strike dates
-      oa.each do |_da|
-        od.each do |_dd|
-          da.each do |_aa|
-            dd.each do |_ad|
+      oa.each do |_oa|
+        od.each do |_od|
+          da.each do |_da|
+            dd.each do |_dd|
+
+              # Get a baseline by testing without the strike
+              # test_strike oa: _oa, od: _od, da: _da, dd: _dd
+
               sd.each do |_sd|
                 strikes.each do |s|
-                  test_strike _da, _dd, _aa, _ad, _sd, s[:src], s[:dst]
+                  test_strike oa: _oa, od: _od, da: _da, dd: _dd, sd: _sd, ssrc: s[:src], sdst: s[:dst]
                 end
               end
             end
@@ -213,6 +217,10 @@ od = parse_dates opts[:od]
 da = opts[:da].split(',')
 dd = parse_dates opts[:dd]
 sd = parse_dates opts[:sd]
+
+# Set a longer web timeout?
+http = Net::HTTP.new(@host, @port)
+http.read_timeout = 60
 
 t = Kayak::Query.new
 #t.run_search
