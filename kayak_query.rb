@@ -18,52 +18,73 @@ Capybara.match = :first
 
 module Kayak
 
+  STRIKES = 'strikes.dat'
+  ROUTES = 'routes.dat'
+  KAYAK_CODES = 'kayak_codes.dat'
+
+  def self.codes
+    @codes ||= {}
+  end
+
+  def self.strikes
+    @strikes ||= []
+  end
+
   def self.load_strikes(filename)
-    strikes = []
     File.open(filename, 'rb').read.lines.each do |l|
       src,dst = l.strip.split(',')
       strikes << { src: src, dst: dst }
     end
     puts "Loaded #{strikes.length} strikes"
-    return strikes
   end
 
   def self.load_kayak_codes(filename)
-    codes = {}
     File.open(filename, 'rb').read.lines.each do |l|
       iata,code = l.strip.split(',')
       codes[iata.to_sym] = code
     end
     puts "Loaded #{codes.length} Kayak codes"
-    return codes
   end
 
   class Query
     include Capybara::DSL
     include Capybara::UserAgent::DSL
 
+    def codes
+      @codes ||= Kayak.codes
+    end
+
+    def strikes
+      @strikes ||= Kayak.strikes
+    end
+
     def initialize
-      @codes = Kayak.load_kayak_codes 'kayak_codes.dat'
-      @strikes = Kayak.load_strikes 'strikes.dat'
+      Kayak.load_kayak_codes KAYAK_CODES
+      Kayak.load_strikes STRIKES
     end
 
     def get_code(iata)
-      code = @codes[iata.to_sym]
+      code = codes[iata.to_sym]
       return if code
 
       visit 'http://www.kayak.com/flights'
       fill_in 'origin', with: iata
       find('li.ap')
       find('#origin').native.send_keys :tab
-      code = find(:xpath, "//input[@id='origincode']").value.strip
+      code = find(:xpath, "//input[@id='origincode']").value.strip.split('/')[1]
 
-      puts "Found Kayak code #{code} for #{iata}"
+      throw "Unable to find Kayak code for #{iata}" if code.empty?
+
+      puts "Found Kayak code #{code} for #{iata}"      
+      codes[iata.to_sym] = code
+      open(KAYAK_CODES, 'a') { |f| f.puts "#{iata},#{code}" }
+
       return code
     end
 
     def run_search
       # Check that we have codes for all strikes
-      @strikes.each do |s|
+      strikes.each do |s|
         get_code s[:src]
         get_code s[:dst]
       end
