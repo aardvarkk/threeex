@@ -2,11 +2,12 @@ require 'capybara'
 require 'capybara-webkit'
 require 'capybara-user_agent'
 require 'open-uri'
+require 'trollop'
 
 Capybara.current_driver = :selenium
 # Capybara.current_driver = :webkit
 # Capybara.javascript_driver = :webkit
-Capybara.default_wait_time = 5
+Capybara.default_wait_time = 60
 
 # Need to interact with hidden form field for Kayak ID
 Capybara.ignore_hidden_elements = false
@@ -14,7 +15,8 @@ Capybara.ignore_hidden_elements = false
 # When searching for an airport showing up on the page, we don't care if it's ambiguous
 Capybara.match = :first
 
-# Capybara::UserAgent.add_user_agents googlebot: 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+# Don't need our own server, I don't think...
+Capybara.run_server = false
 
 module Kayak
 
@@ -90,90 +92,128 @@ module Kayak
       end
     end
 
-    def run_query
+    def test_strike(oa, od, da, dd, sd, ssrc, sdst)
 
-      # set_user_agent :googlebot
-      # target = 'http://www.ca.kayak.com'
-      # target = 'http://www.ca.kayak.com/flights'
+      Capybara.current_session.reset!
+
       target = 'http://www.ca.kayak.com/flights?mc=y'
       visit target
 
       # Fill in the form (works in Selenium!)
+      # Fill with blanks first to stop auto-filling when moving through the form
 
-      fill_in 'origin0', with: 'YYZ'
-      # fill_in 'origincode0', with: 'YYZ/11592'
-      # find(:xpath, "//input[@id='origincode0']").set 'YYZ/11592'
-      Capybara.current_session.driver.execute_script("return document.getElementById('origincode0').value = 'YYZ/11592';")
+      fill_in 'origin0', with: ''
+      fill_in 'origin0', with: oa
+      Capybara.current_session.driver.execute_script("return document.getElementById('origincode0').value = '#{get_code oa}';")
 
-      fill_in 'destination0', with: 'ARN'
-      # fill_in 'destcode0', with: 'ARN/9880'
-      # find(:xpath, "//input[@id='destcode0']").set 'ARN/9880'
-      Capybara.current_session.driver.execute_script("return document.getElementById('destcode0').value = 'ARN/9880';")
-      fill_in 'depart_date0', with: '04/08/2014'
+      fill_in 'destination0', with: ''
+      fill_in 'destination0', with: da
+      Capybara.current_session.driver.execute_script("return document.getElementById('destcode0').value = '#{get_code da}';")
+      
+      fill_in 'depart_date0', with: od.strftime('%d/%m/%Y')
 
-      fill_in 'origin1', with: 'ARN'
-      # fill_in 'origincode1', with: 'ARN/9880'
-      # find(:xpath, "//input[@id='origincode1']").set 'ARN/9880'
-      Capybara.current_session.driver.execute_script("return document.getElementById('origincode1').value = 'ARN/9880';")
-      fill_in 'destination1', with: 'YYZ'
-      # fill_in 'destcode1', with: 'YYZ/11592'
-      # find(:xpath, "//input[@id='destcode1']").set 'YYZ/11592'
-      Capybara.current_session.driver.execute_script("return document.getElementById('destcode1').value = 'YYZ/11592';")
-      fill_in 'depart_date1', with: '18/08/2014'
+      fill_in 'origin1', with: ''
+      fill_in 'origin1', with: da
+      Capybara.current_session.driver.execute_script("return document.getElementById('origincode1').value = '#{get_code da}';")
 
-      fill_in 'origin2', with: 'KIR'
-      # fill_in 'origincode2', with: 'KIR/53064'
-      # find(:xpath, "//input[@id='origincode2']").set 'KIR/53064'
-      Capybara.current_session.driver.execute_script("return document.getElementById('origincode2').value = 'KIR/53064';")
-      fill_in 'destination2', with: 'DUB'
-      # fill_in 'destcode2', with: 'DUB/7362'
-      # find(:xpath, "//input[@id='destcode2']").set 'DUB/7362'
-      Capybara.current_session.driver.execute_script("return document.getElementById('destcode2').value = 'DUB/7362';")
-      fill_in 'depart_date2', with: '25/08/2014'
+      fill_in 'destination1', with: ''
+      fill_in 'destination1', with: oa
+      Capybara.current_session.driver.execute_script("return document.getElementById('destcode1').value = '#{get_code oa}';")
+
+      fill_in 'depart_date1', with: dd.strftime('%d/%m/%Y')
+
+      fill_in 'origin2', with: ''
+      fill_in 'origin2', with: ssrc
+      Capybara.current_session.driver.execute_script("return document.getElementById('origincode2').value = '#{get_code ssrc}';")
+      
+      fill_in 'destination2', with: ''
+      fill_in 'destination2', with: sdst
+      Capybara.current_session.driver.execute_script("return document.getElementById('destcode2').value = '#{get_code sdst}';")
+
+      fill_in 'depart_date2', with: sd.strftime('%d/%m/%Y')
 
       click_on 'fdimgbutton'
 
-      # sleep 10
+      # Don't want a CAPTCHA...
+      if has_no_selector? '#recaptcha_challenge_image'
 
-      # print page.html
+        # Don't want an empty result...
+        if has_no_selector? '.noresults'
 
-      save_screenshot 'screenshot.png'
+          # Don't want a progress bar...
+          if has_no_selector? '#progressDiv'
+            all('.bookitprice').each do |p|
+              puts p.text
+            end
+          else
+            throw "Still searching?!"
+          end
 
-      # response_headers.each { |h| puts h }
-      # driver.cookies.each { |c| puts c }
-      # driver.browser.get_cookies.each { |c| puts c }
+        else
+          return
+        end
 
-      # target = 'http://www.ca.kayak.com/flights/YYZ-ARN/2014-08-04/ARN-YYZ/2014-08-18/KIR-DUB/2014-08-25'
-      # visit target
-      # save_screenshot 'screenshot.png'
-
-      # Capybara.current_session.driver.request.cookies.[]('auth_token').should_not be_nil
-      # auth_token_value = Capybara.current_session.driver.request.cookies.[]('auth_token')
-      # Capybara.reset_sessions!
-      # driver.browser.set_cookie("auth_token=#{auth_token_value}")
-
-      # If it's reCAPTCHA, grab the image
-      if has_selector? '#recaptcha_challenge_image', wait: 5
+      else
         reCAPTCHA = find '#recaptcha_challenge_image'
 
         open('reCAPTCHA.jpg', 'wb') do |file|
           file << open(reCAPTCHA['src']).read
         end
 
-        puts 'reCAPTCHA'
-        return
+        throw 'reCAPTCHA'
       end
 
-      # find '#progressDiv'
-      find '.pagecontrols'
-      all('.bookitprice').each do |p|
-        puts p.text
+      save_screenshot "#{Time.now.to_s}_#{oa}_#{od}_#{da}_#{dd}_#{ssrc}_#{sdst}_#{sd}.png"
+
+    end
+
+    def run_query(oa, od, da, dd, sd)
+
+      # Get codes for all airports
+      oa.each { |a| get_code a }
+      da.each { |a| get_code a }
+
+      # Here's the massive loop...
+      # for all origin airports on all origin dates
+      # and all destination airports on all destination dates
+      # check all strikes on all strike dates
+      oa.each do |_da|
+        od.each do |_dd|
+          da.each do |_aa|
+            dd.each do |_ad|
+              sd.each do |_sd|
+                strikes.each do |s|
+                  test_strike _da, _dd, _aa, _ad, _sd, s[:src], s[:dst]
+                end
+              end
+            end
+          end
+        end
       end
+
+
     end
   end
 end
 
-t = Kayak::Query.new
-t.run_search
-#t.run_query
+opts = Trollop::options do
+  opt :oa, "Origin Airport(s)", type: :string
+  opt :od, "Origin Date(s)", type: :string
+  opt :da, "Destination Airport(s)", type: :string
+  opt :dd, "Destination Date(s)", type: :string
+  opt :sd, "Strike Date(s)", type: :string
+end
 
+def parse_dates(dates)
+  dates.split(',').map { |d| Date.parse d }
+end
+
+oa = opts[:oa].split(',')
+od = parse_dates opts[:od]
+da = opts[:da].split(',')
+dd = parse_dates opts[:dd]
+sd = parse_dates opts[:sd]
+
+t = Kayak::Query.new
+#t.run_search
+t.run_query oa, od, da, dd, sd
