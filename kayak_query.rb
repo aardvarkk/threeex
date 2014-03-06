@@ -6,12 +6,12 @@ require 'open-uri'
 require 'trollop'
 
 LONG_WAIT = 60
-SHORT_WAIT = 5
+SHORT_WAIT = 0
 
 Capybara.current_driver = :selenium
 # Capybara.current_driver = :webkit
 # Capybara.javascript_driver = :webkit
-Capybara.default_wait_time = LONG_WAIT
+Capybara.default_wait_time = SHORT_WAIT
 
 # Need to interact with hidden form field for Kayak ID
 Capybara.ignore_hidden_elements = false
@@ -75,21 +75,22 @@ module Kayak
 
     def get_code(iata)
       code = codes[iata.to_sym]
-      return if code
 
-      visit 'http://www.kayak.com/flights'
-      fill_in 'origin', with: iata
-      find('li.ap')
-      find('#origin').native.send_keys :tab
-      code = find(:xpath, "//input[@id='origincode']").value.strip.split('/')[1]
+      if code.empty?
+        visit 'http://www.kayak.com/flights'
+        fill_in 'origin', with: iata
+        find('li.ap')
+        find('#origin').native.send_keys :tab
+        code = find(:xpath, "//input[@id='origincode']").value.strip.split('/')[1]
 
-      throw "Unable to find Kayak code for #{iata}" if code.empty?
+        throw "Unable to find Kayak code for #{iata}" if code.empty?
 
-      puts "Found Kayak code #{code} for #{iata}"      
-      codes[iata.to_sym] = code
-      open(KAYAK_CODES, 'a') { |f| f.puts "#{iata},#{code}" }
+        puts "Added Kayak code #{code} for #{iata}"      
+        codes[iata.to_sym] = code
+        open(KAYAK_CODES, 'a') { |f| f.puts "#{iata},#{code}" }
+      end
 
-      return code
+      return "#{iata}/#{code}"
     end
 
     def run_search
@@ -103,6 +104,7 @@ module Kayak
     def test_strike(itin)
 
       Capybara.current_session.reset!
+      browser = Capybara.current_session.driver.browser
 
       target = 'http://www.ca.kayak.com/flights?mc=y'
       visit target
@@ -112,21 +114,21 @@ module Kayak
 
       fill_in 'origin0', with: ''
       fill_in 'origin0', with: itin[:oa]
-      Capybara.current_session.driver.execute_script("return document.getElementById('origincode0').value = '#{get_code itin[:oa]}';")
+      browser.execute_script("return document.getElementById('origincode0').value = '#{get_code itin[:oa]}';")
 
       fill_in 'destination0', with: ''
       fill_in 'destination0', with: itin[:da]
-      Capybara.current_session.driver.execute_script("return document.getElementById('destcode0').value = '#{get_code itin[:da]}';")
+      browser.execute_script("return document.getElementById('destcode0').value = '#{get_code itin[:da]}';")
       
       fill_in 'depart_date0', with: itin[:od].strftime('%d/%m/%Y')
 
       fill_in 'origin1', with: ''
       fill_in 'origin1', with: itin[:da]
-      Capybara.current_session.driver.execute_script("return document.getElementById('origincode1').value = '#{get_code itin[:da]}';")
+      browser.execute_script("return document.getElementById('origincode1').value = '#{get_code itin[:da]}';")
 
       fill_in 'destination1', with: ''
       fill_in 'destination1', with: itin[:oa]
-      Capybara.current_session.driver.execute_script("return document.getElementById('destcode1').value = '#{get_code itin[:oa]}';")
+      browser.execute_script("return document.getElementById('destcode1').value = '#{get_code itin[:oa]}';")
 
       fill_in 'depart_date1', with: itin[:dd].strftime('%d/%m/%Y')
 
@@ -134,11 +136,11 @@ module Kayak
       if itin[:ssrc] && itin[:sdst] && itin[:sd]
         fill_in 'origin2', with: ''
         fill_in 'origin2', with: itin[:ssrc]
-        Capybara.current_session.driver.execute_script("return document.getElementById('origincode2').value = '#{get_code itin[:ssrc]}';")
+        browser.execute_script("return document.getElementById('origincode2').value = '#{get_code itin[:ssrc]}';")
         
         fill_in 'destination2', with: ''
         fill_in 'destination2', with: itin[:sdst]
-        Capybara.current_session.driver.execute_script("return document.getElementById('destcode2').value = '#{get_code itin[:sdst]}';")
+        browser.execute_script("return document.getElementById('destcode2').value = '#{get_code itin[:sdst]}';")
 
         fill_in 'depart_date2', with: itin[:sd].strftime('%d/%m/%Y')
       end
@@ -146,22 +148,26 @@ module Kayak
       click_on 'fdimgbutton'
 
       # Empty result...
-      Capybara.default_wait_time = SHORT_WAIT
-      return if has_selector? '.noresults'
-      Capybara.default_wait_time = LONG_WAIT
+      if has_selector? '.noresults'
+        puts "No results found"
+        return
+      end
 
       # Wait for progress bar...
       if has_selector? '#progressDiv'
+        puts "Found progressDiv"
 
         # Now wait for it to disappear...
+        Capybara.default_wait_time = LONG_WAIT
         if has_no_selector? '#progressDiv'
+          puts "Progress is done"
 
           prices << { itin: itin, price: find('.bookitprice').text.gsub(/\D/,'').to_i }
           prices.sort_by! { |p| p[:price] }
           save_screenshot "#{itin.values.join('_')}.png"
           puts prices.first
-          return
         end
+        Capybara.default_wait_time = SHORT_WAIT
 
       end
 
@@ -183,7 +189,7 @@ module Kayak
             dd.each do |_dd|
 
               # Get a baseline by testing without the strike
-              # test_strike oa: _oa, od: _od, da: _da, dd: _dd
+              test_strike oa: _oa, od: _od, da: _da, dd: _dd
 
               sd.each do |_sd|
                 strikes.each do |s|
