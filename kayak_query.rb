@@ -1,6 +1,5 @@
 require 'capybara'
 require 'capybara-webkit'
-require 'capybara-user_agent'
 require 'net/http' 
 require 'open-uri'
 require 'trollop'
@@ -24,8 +23,9 @@ Capybara.run_server = false
 
 module Kayak
 
+  PATH_PREFIX = 'openflights/openflights/data/'
+  ROUTES = PATH_PREFIX + 'routes.dat'
   STRIKES = 'strikes.dat'
-  ROUTES = 'routes.dat'
   KAYAK_CODES = 'kayak_codes.dat'
 
   def self.codes
