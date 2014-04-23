@@ -4,6 +4,7 @@ require 'rest_client'
 require 'trollop'
 
 PATH_PREFIX = 'openflights/openflights/data/'
+UNSUPPORTED = %w(XSB)
 
 opts = Trollop::options do
   opt :src, 'Source airport', type: :string
@@ -25,7 +26,14 @@ matches.each_slice opts[:groupsize] do |match_group|
 
   # Create a map string from the matches
   map_str = []
-  match_group.each { |m| map_str << "#{m[1]}-#{m[2]}" }
+
+  # Ignore unsupported destinations
+  match_group.each do |m| 
+    next if UNSUPPORTED.include? m[1]
+    next if UNSUPPORTED.include? m[2]
+    map_str << "#{m[1]}-#{m[2]}"
+  end
+
   map_str = map_str.join ','
 
   # open('map_str', 'w') { |file| file.write map_str }
