@@ -84,7 +84,7 @@ RestClient.get 'www.pososhok.ru/partner/english/avia/step2_tariffs.html?action=s
   # p response.headers
   # p response.cookies
   # p response.to_s
-  File.open('response.html', 'w') { |file| file.write response }
+  # File.open('response.html', 'w') { |file| file.write response }
   puts PososhokParser::parse(response.to_s)
 end
 
