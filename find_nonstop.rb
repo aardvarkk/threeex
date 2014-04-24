@@ -6,18 +6,30 @@ require 'trollop'
 PATH_PREFIX = 'openflights/openflights/data/'
 UNSUPPORTED = %w(XSB)
 
+ALLIANCES =
+{
+  '*A' => %w(JP A3 AC CA NZ NH OZ OS AV SN CM OU MS ET BR LO LH SK ZH SQ SA LX TP TG TK UA),
+  'OW' => %w(AB AA BA CX AY IB JL LA JJ MH QF QR RJ S7),
+  'ST' => %w(SU AR AM UX AF AZ CI MU CZ OK DL KQ KL KE ME SV RO VN MF)
+}
+
 opts = Trollop::options do
   opt :src, 'Source airport', type: :string
   opt :dst, 'Destination airport', type: :string
+  opt :excludeairlines, 'Excluded airlines', type: :strings
   opt :airline, 'Airline', type: :string
+  opt :alliance, 'Alliance', type: :string
   opt :map, 'Draw map'
   opt :mapfile, 'Map filename', type: :string, default: 'map'
   opt :groupsize, 'Map group size', default: 500
+  opt :label, 'Label points', type: :boolean, default: false
 end
 
 routes = File.open(PATH_PREFIX + 'routes.dat', 'rb').read
 
 matches = routes.scan /(#{opts[:airline].nil? ? '[\\w]{2}' : opts[:airline]}),[\d]+,(#{opts[:src].nil? ? '[\\w]{3}' : opts[:src]}),[\d]+,(#{opts[:dst].nil? ? '[\\w]{3}' : opts[:dst]})/
+matches.reject! { |m| opts[:alliance] && !ALLIANCES[opts[:alliance]].include?(m[0]) }
+matches.reject! { |m| opts[:excludeairlines] && opts[:excludeairlines].include?(m[0])}
 matches.each { |m| puts "#{m[0]}-#{m[1]}-#{m[2]}"}
 
 # Split up into groups
@@ -40,8 +52,12 @@ matches.each_slice opts[:groupsize] do |match_group|
 
   # Label all points
   # &PM=*
+  # Various map styles
+  # Rectangular: &MP=r
   if opts[:map]
-    RestClient.get "www.gcmap.com/map?P=#{map_str}&MS=wls2" do |response, request, result|
+    url = "www.gcmap.com/map?P=#{map_str}&MS=wls2&MP=r"
+    url += "&PM=*" if opts[:label]
+    RestClient.get url do |response, request, result|
         # p response
         # p request
         # p result
