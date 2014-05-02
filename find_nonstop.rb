@@ -18,7 +18,7 @@ opts = Trollop::options do
   opt :dst, 'Destination airport', type: :string
   opt :excludeairlines, 'Excluded airlines', type: :strings
   opt :airline, 'Airline', type: :string
-  opt :alliance, 'Alliance', type: :string
+  opt :alliance, 'Alliance (*A, OW, ST)', type: :string
   opt :map, 'Draw map'
   opt :mapfile, 'Map filename', type: :string, default: 'map'
   opt :groupsize, 'Map group size', default: 500
