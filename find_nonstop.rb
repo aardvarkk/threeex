@@ -4,7 +4,7 @@ require 'rest_client'
 require 'trollop'
 
 PATH_PREFIX = 'openflights/openflights/data/'
-UNSUPPORTED = %w(XSB)
+UNSUPPORTED = %w(ULK XSB)
 
 ALLIANCES =
 {

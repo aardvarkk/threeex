@@ -21,7 +21,9 @@ class PososhokParser
       results << { 
         price: v[0].text.scan(/\d+/)[0].to_i, 
         fare_basis: v[1].text.scan(/fare_basis: (.+);/)[0][0],
-        airline: v[1].text.scan(/airline: (.+)/)[0][0].strip.to_sym
+
+        # Don't use symbols because symbols can't start with numbers (9W, for instance)
+        airline: v[1].text.scan(/airline: (.+)/)[0][0].strip
       }
     end
 

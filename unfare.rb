@@ -1,15 +1,26 @@
 require 'rest_client'
 require 'trollop'
 require './pososhok_parser.rb'
+require './metro_codes.rb'
 
 opts = Trollop::options do
   opt :src, 'Source airport', type: :string, required: true
   opt :date, 'Date', type: :string, required: true
   opt :dst, 'Destination airport', type: :string, required: true
   opt :airline, 'Airline', type: :string
+  opt :writeresponse, 'Write response to file', type: :boolean, default: false
 end
 
 # NOTE: MUST USE METRO CODES, NOT AIRPORTS (IAH -> HOU)
+if AIRPORT_TO_METRO.has_key? opts[:src].to_sym
+  puts "Warning: Replacing #{opts[:src]} with #{AIRPORT_TO_METRO[opts[:src].to_sym]}"
+  opts[:src] = AIRPORT_TO_METRO[opts[:src].to_sym]
+end
+
+if AIRPORT_TO_METRO.has_key? opts[:dst].to_sym
+  puts "Warning: Replacing #{opts[:dst]} with #{AIRPORT_TO_METRO[opts[:dst].to_sym]}"
+  opts[:dst] = AIRPORT_TO_METRO[opts[:dst].to_sym]
+end
 
 params = nil
 cookies = nil
@@ -84,7 +95,7 @@ RestClient.get 'www.pososhok.ru/partner/english/avia/step2_tariffs.html?action=s
   # p response.headers
   # p response.cookies
   # p response.to_s
-  # File.open('response.html', 'w') { |file| file.write response }
+  # File.open('response.html', 'w') { |file| file.write response } if opts[:writeresponse]
   puts PososhokParser::parse(response.to_s)
 end
 
