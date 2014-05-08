@@ -62,3 +62,7 @@ Notes:
     Routes where one carrier operates both its own and codeshare flights are listed only once. 
 
 ruby kayak_query.rb --od 2014-04-05,2014-04-06,2014-04-07 --oa GOT --dd 2014-04-30 --da JFK --sd 2014-05-01
+
+= Features to Add =
+
+* Show listing of "failed" airport searches to either stop checking for them or fix any issues
