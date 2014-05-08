@@ -1,12 +1,12 @@
 Currently Google’s search bot has two official user agents: Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html) and the less common Googlebot/2.1 (+http://www.google.com/bot.html)
 
-OpenFlights.org
+# OpenFlights.org
 
 https://sourceforge.net/p/openflights/code/HEAD/tree/openflights/data/airports.dat?format=raw
 https://sourceforge.net/p/openflights/code/HEAD/tree/openflights/data/airlines.dat?format=raw
 https://sourceforge.net/p/openflights/code/HEAD/tree/openflights/data/routes.dat?format=raw
 
-Airports
+# Airports
 
 Airport ID Unique OpenFlights identifier for this airport.
 Name Name of airport. May or may not contain the City name.
@@ -27,7 +27,7 @@ The data is ISO 8859-1 (Latin-1) encoded, with no special characters.
 
 Note: Rules for daylight savings time change from year to year and from country to country. The current data is an approximation for 2009, built on a country level. Most airports in DST-less regions in countries that generally observe DST (eg. AL, HI in the USA, NT, QL in Australia, parts of Canada) are marked incorrectly.
 
-Airlines
+# Airlines
 
 Airline ID Unique OpenFlights identifier for this airline.
 Name Name of the airline.
@@ -42,7 +42,7 @@ The data is ISO 8859-1 (Latin-1) encoded. The special value \N is used for "NULL
 
 Notes: Airlines with null codes/callsigns/countries generally represent user-added airlines. Since the data is intended primarily for current flights, defunct IATA codes are generally not included. For example, "Sabena" is not listed with a SN IATA code, since "SN" is presently used by its successor Brussels Airlines.
 
-Routes
+# Routes
 
 Airline 2-letter (IATA) or 3-letter (ICAO) code of the airline.
 Airline ID Unique OpenFlights identifier for airline (see Airline).
@@ -63,6 +63,6 @@ Notes:
 
 ruby kayak_query.rb --od 2014-04-05,2014-04-06,2014-04-07 --oa GOT --dd 2014-04-30 --da JFK --sd 2014-05-01
 
-= Features to Add =
+# Features to Add
 
 * Show listing of "failed" airport searches to either stop checking for them or fix any issues
