@@ -17,6 +17,7 @@ airports.each do |a|
   
   prices = PososhokQuery::run(opts)
   if !prices.empty?
+    puts prices
     f = File.open("valid_#{opts[:src]}.dat", 'a')
     f.puts a
     f.close
