@@ -85,6 +85,7 @@ class PososhokQuery
       # p response.to_s
     end
 
+    prices = nil
     RestClient.get 'www.pososhok.ru/partner/english/avia/step2_tariffs.html?action=select_tariff', cookie: cookie_str do |response, request, result|
       # p request.headers
       # p response.code
@@ -92,8 +93,11 @@ class PososhokQuery
       # p response.cookies
       # p response.to_s
       # File.open('response.html', 'w') { |file| file.write response } if opts[:writeresponse]
-      puts PososhokParser::parse(response.to_s)
+      prices = PososhokParser::parse(response.to_s)
+      # puts PososhokParser::parse(response.to_s)
     end
+
+    return prices
 
   end
 

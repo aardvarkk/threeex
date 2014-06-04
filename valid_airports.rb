@@ -7,11 +7,22 @@ airports = f.scan(/"([A-Z0-9]{3})\"/).map { |a| a.first }
 # p airports
 
 airports.each do |a|
+
   opts = {
-    src: "YYZ",
+    src: "YTO",
     dst: a,
     date: Date.today
   }
   puts "Querying #{opts}"
-  PososhokQuery::run(opts)
+  
+  prices = PososhokQuery::run(opts)
+  if !prices.empty?
+    f = File.open("valid_#{opts[:src]}.dat", 'a')
+    f.puts a
+    f.close
+  end
+
+  puts "Sleeping..."
+  sleep(Random.rand(3...5))
+
 end
