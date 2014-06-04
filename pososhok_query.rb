@@ -1,10 +1,23 @@
 require 'rest_client'
+require './metro_codes.rb'
 require './pososhok_parser.rb'
 
 class PososhokQuery
 
+  # opts: { date, src, dst, [airline] }
   def self.run(opts)
   
+    # NOTE: MUST USE METRO CODES, NOT AIRPORTS (IAH -> HOU)
+    if AIRPORT_TO_METRO.has_key? opts[:src].to_sym
+      puts "Warning: Replacing #{opts[:src]} with #{AIRPORT_TO_METRO[opts[:src].to_sym]}"
+      opts[:src] = AIRPORT_TO_METRO[opts[:src].to_sym]
+    end
+
+    if AIRPORT_TO_METRO.has_key? opts[:dst].to_sym
+      puts "Warning: Replacing #{opts[:dst]} with #{AIRPORT_TO_METRO[opts[:dst].to_sym]}"
+      opts[:dst] = AIRPORT_TO_METRO[opts[:dst].to_sym]
+    end
+
     params = nil
     cookies = nil
     cookie_str = nil
@@ -20,8 +33,8 @@ class PososhokQuery
     # Format is DD/MM/YYYY
     params = {
       'FlightSearchForm.routeType' => 'ROUND_TRIP',
-      'FlightSearchForm.date.0' => Date.parse(opts[:date]).strftime('%d.%m.%Y'),
-      'FlightSearchForm.date.1' => Date.parse(opts[:date]).strftime('%d.%m.%Y'),
+      'FlightSearchForm.date.0' => opts[:date].strftime('%d.%m.%Y'),
+      'FlightSearchForm.date.1' => opts[:date].strftime('%d.%m.%Y'),
       'FlightSearchForm.departureLocation.0' => opts[:src],
       'FlightSearchForm.departureLocation.0.CODE' => opts[:src],
       'FlightSearchForm.arrivalLocation.0' => opts[:dst],
