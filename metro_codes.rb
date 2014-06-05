@@ -97,7 +97,7 @@ AIRPORT_TO_METRO = {
   CGH: :SAO,
   VCP: :SAO,
   RKV: :REK,
-  KEY: :REK
+  KEF: :REK
 }
 
 # Unsupported right now...
