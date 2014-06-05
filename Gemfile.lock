@@ -25,6 +25,8 @@ GEM
     rack (1.5.2)
     rack-test (0.6.2)
       rack (>= 1.0)
+    rest-client (1.6.7)
+      mime-types (>= 1.16)
     rubyzip (1.1.0)
     selenium-webdriver (2.40.0)
       childprocess (>= 0.5.0)
@@ -43,5 +45,6 @@ DEPENDENCIES
   capybara
   capybara-webkit
   launchy
+  rest-client
   selenium-webdriver
   trollop

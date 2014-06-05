@@ -6,7 +6,7 @@ f = File.read('openflights/openflights/data/airports.dat')
 airports = f.scan(/"([A-Z0-9]{3})\"/).map { |a| a.first }
 # p airports
 
-airports.each do |a|
+airports.each_with_index do |a,i|
 
   opts = {
     src: "YTO",
@@ -23,7 +23,7 @@ airports.each do |a|
     f.close
   end
 
-  puts "Sleeping..."
+  puts "Sleeping after airport #{i+1} of #{airports.length}..."
   sleep(Random.rand(3...5))
 
 end

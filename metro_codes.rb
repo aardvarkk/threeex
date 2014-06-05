@@ -95,7 +95,9 @@ AIRPORT_TO_METRO = {
   SDU: :RIO,
   GRU: :SAO,
   CGH: :SAO,
-  VCP: :SAO
+  VCP: :SAO,
+  RKV: :REK,
+  KEY: :REK
 }
 
 # Unsupported right now...
