@@ -1,3 +1,4 @@
+require 'pry'
 require 'nokogiri'
 
 class PososhokParser
@@ -17,10 +18,18 @@ class PososhokParser
     fare_basis = nodes.xpath('//td//comment()')
     # puts fare_basis
 
+    # Verify route
+    route = nodes.xpath('//td[@class="destination"]/text()').first
+    return results if route.nil?
+    src = route.text.scan(/\((.{3})\)/)[0][0]
+    dst = route.text.scan(/\((.{3})\)/)[1][0]
+
     prices.zip(fare_basis).each_with_index do |v,i|
       results << { 
         price: v[0].text.scan(/\d+/)[0].to_i, 
         fare_basis: v[1].text.scan(/fare_basis: (.+);/)[0][0],
+        src: src,
+        dst: dst,
 
         # Don't use symbols because symbols can't start with numbers (9W, for instance)
         airline: v[1].text.scan(/airline: (.+)/)[0][0].strip
