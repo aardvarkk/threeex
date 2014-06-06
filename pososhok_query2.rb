@@ -53,7 +53,9 @@ class PososhokQuery2
     click_on 'search-button'
 
     puts "Checking URL..."
-    while URI.parse(current_url).query.nil?    
+    while URI.parse(current_url).query.nil?
+        puts current_url
+        sleep(1)
     end
     
     # BAD: http://www.pososhok.ru/partner/english/avia/?err=1&arrivalLocation.0=EGS
