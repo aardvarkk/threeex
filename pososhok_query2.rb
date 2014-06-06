@@ -24,6 +24,11 @@ class PososhokQuery2
       opts[:dst] = AIRPORT_TO_METRO[opts[:dst]]
     end
 
+    if opts[:src] == opts[:dst]
+        puts "Warning: identical source and destination"
+        return []
+    end
+
     Capybara.current_driver = :webkit
     Capybara.ignore_hidden_elements = false
     Capybara.match = :first
