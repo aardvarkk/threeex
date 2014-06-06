@@ -21,8 +21,8 @@ class PososhokParser
     # Verify route
     route = nodes.xpath('//td[@class="destination"]/text()').first
     return results if route.nil?
-    src = route.text.scan(/\((.{3})\)/)[0][0]
-    dst = route.text.scan(/\((.{3})\)/)[1][0]
+    src = route.text.scan(/\((.{3})\)/)[0][0].strip
+    dst = route.text.scan(/\((.{3})\)/)[1][0].strip
 
     prices.zip(fare_basis).each_with_index do |v,i|
       results << { 

@@ -11,7 +11,7 @@ end
 
 # Get all airports
 f = File.read('openflights/openflights/data/airports.dat')
-airports = f.scan(/"([A-Z0-9]{3})\"/).map { |a| a.first }
+airports = f.scan(/"([A-Z0-9]{3})\"/).map { |a| a.first.strip }
 # p airports
 
 # Remove all known-valid from the list so we don't retry them
@@ -33,7 +33,6 @@ airports = airports[airports.index(known_valid.last)..-1] if !airports.index(kno
     date: Date.today
   }
   puts "Querying #{opts}"
-  
 
   prices = PososhokQuery2.new.run(opts)
 
@@ -43,6 +42,9 @@ airports = airports[airports.index(known_valid.last)..-1] if !airports.index(kno
     if opts[:src] != prices.first[:src]
       puts "IGNORING: Requested source #{opts[:src]} doesn't match returned source #{prices.first[:src]}"
     elsif opts[:dst] != prices.first[:dst]
+      p opts[:dst]
+      p prices.first[:dst]
+      binding.pry
       puts "IGNORING: Requested destination #{opts[:dst]} doesn't match returned destination #{prices.first[:dst]}"
     else
       puts prices
@@ -52,7 +54,7 @@ airports = airports[airports.index(known_valid.last)..-1] if !airports.index(kno
     end
   end
 
-  puts "Sleeping after airport #{i+1} of #{airports.length}..."
-  sleep(Random.rand(3...5))
+  # puts "Sleeping after airport #{i+1} of #{airports.length}..."
+  # sleep(5)
 
 end

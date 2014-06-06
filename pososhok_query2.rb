@@ -14,14 +14,14 @@ class PososhokQuery2
   def run(opts)
 
     # NOTE: MUST USE METRO CODES, NOT AIRPORTS (IAH -> HOU)
-    if AIRPORT_TO_METRO.has_key? opts[:src].to_sym
-      puts "Warning: Replacing #{opts[:src]} with #{AIRPORT_TO_METRO[opts[:src].to_sym]}"
-      opts[:src] = AIRPORT_TO_METRO[opts[:src].to_sym]
+    if AIRPORT_TO_METRO.has_key? opts[:src]
+      puts "Warning: Replacing #{opts[:src]} with #{AIRPORT_TO_METRO[opts[:src]]}"
+      opts[:src] = AIRPORT_TO_METRO[opts[:src]]
     end
 
-    if AIRPORT_TO_METRO.has_key? opts[:dst].to_sym
-      puts "Warning: Replacing #{opts[:dst]} with #{AIRPORT_TO_METRO[opts[:dst].to_sym]}"
-      opts[:dst] = AIRPORT_TO_METRO[opts[:dst].to_sym]
+    if AIRPORT_TO_METRO.has_key? opts[:dst]
+      puts "Warning: Replacing #{opts[:dst]} with #{AIRPORT_TO_METRO[opts[:dst]]}"
+      opts[:dst] = AIRPORT_TO_METRO[opts[:dst]]
     end
 
     Capybara.current_driver = :webkit
@@ -47,11 +47,10 @@ class PososhokQuery2
     puts "Starting search..."
     click_on 'search-button'
 
-    # Give time to redirect (can't seem to check for this...)
-    sleep(1)
-
     puts "Checking URL..."
-
+    while URI.parse(current_url).query.nil?    
+    end
+    
     # BAD: http://www.pososhok.ru/partner/english/avia/?err=1&arrivalLocation.0=EGS
     # GOOD: http://www.pososhok.ru/partner/english/avia/step2_tariffs.html?action=select_tariff
     # We've found an error...
