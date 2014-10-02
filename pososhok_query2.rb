@@ -37,7 +37,7 @@ class PososhokQuery2
     Capybara.current_session.reset!
     browser = Capybara.current_session.driver.browser
 
-    target = 'http://www.pososhok.ru/partner/english'
+    target = 'http://old.pososhok.ru/partner/english'
     puts "Visiting #{target}..."
     visit target
 
